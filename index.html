@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Application Purchase Order</title>
         <link rel="stylesheet" href="style.css">
-    </head>
+</head>
 
     <body>
         <div class="app-layout">
@@ -31,13 +31,15 @@
                     <select id="poSelect">
                         <option value="">-- Select PO --</option>
                     </select>
-                    <small id="readStatus" style="display:block;margin-top:6px;color:#333;text-align:center;"></small>
+                    <button id="uploadExcelBtn" type="button">📤 Upload PO Excel</button>
+                    <button id="deletePOBtn" type="button" class="delete-po-btn" disabled>🗑️ Hapus PO Terpilih</button>
+                    <input id="excelFileInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;">
+                    <small id="uploadStatus" style="display:block;margin-top:6px;color:#333;text-align:center;"></small>
                     <div class="po-nav">
                         <button id="prevPO">⬅ Previous PO</button>
                         <button id="nextPO">Next PO ➡</button>
                     </div>
                     <button onclick="window.print()">Print / Save PDF</button>
-                    <button onclick="backToGallery()"> 🔙 Back to Gallery Item </button>
                     <button onclick="backToApp1()">🔙 Back to Dashboard</button>
 
                     <div class="toko-online" id="dashboardLinks">
@@ -132,8 +134,15 @@
         </div>
         <!-- Tambahkan ini di bagian <head> -->
         <!-- Excel + Firebase -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
         <script src="script.js"></script>
     </body>
 
