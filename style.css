@@ -342,17 +342,3 @@
             #dataTable td.aql {
                 text-align: center;
             }
-
-
-/* Tombol hapus PO */
-.delete-po-btn {
-    background: #b42318;
-    color: #fff;
-}
-.delete-po-btn:hover:not(:disabled) {
-    background: #8f1d14;
-}
-.delete-po-btn:disabled {
-    opacity: .55;
-    cursor: not-allowed;
-}
