@@ -134,6 +134,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 const count = Object.keys(data).length;
 
             }
+            function backToGallery() {
+                window.location.href = "https://jeffanind.github.io/Gallery-Item-Product/";
+            }
 
             function backToApp1() {
                 window.location.href = "https://jeffanind.github.io/Appl-System-Dashboard/";
