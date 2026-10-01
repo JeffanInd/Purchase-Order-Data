@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 setUploadStatus(count ? `${count} PO tersedia dari Firebase.` : "Belum ada data PO. Upload Excel.");
             }
             function backToGallery() {
-                window.location.href = "https://jeffanind.github.io/Gallery-Item-Product";
+                window.location.href = "https://jeffanind.github.io/Gallery-Item-Product/";
             }
 
             function backToApp1() {
