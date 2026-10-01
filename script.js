@@ -43,6 +43,13 @@ document.addEventListener("DOMContentLoaded", function () {
             let data = {};
             let firebaseReady = false;
 
+            function setUploadStatus(message, isError = false) {
+                const el = document.getElementById("uploadStatus");
+                if (!el) return;
+                el.textContent = message || "";
+                el.style.color = isError ? "#b00020" : "#333";
+            }
+
             function firebaseConfigIsReady() {
                 return firebaseConfig.apiKey &&
                     !firebaseConfig.apiKey.startsWith("GANTI_") &&
@@ -55,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
             function initFirebase() {
                 if (!firebaseConfigIsReady()) {
                     console.warn("Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.");
-
+                    setUploadStatus("Firebase belum dikonfigurasi");
                     return false;
                 }
 
@@ -66,10 +73,140 @@ document.addEventListener("DOMContentLoaded", function () {
                     return true;
                 } catch (error) {
                     console.error("Firebase initialization error:", error);
-
+                    setUploadStatus("Firebase gagal diinisialisasi", true);
                     return false;
                 }
             }
+
+            // ============================================================
+            // EXCEL -> FIRESTORE
+            // Format Excel yang digunakan:
+            // PO | Vendor | ECRD | Item | Qty | Description | Image
+            // Header tidak sensitif huruf besar/kecil.
+            // ============================================================
+            function normalizeHeader(value) {
+                return String(value ?? "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]/g, "");
+            }
+
+            function findExcelColumn(row, aliases) {
+                const keys = Object.keys(row);
+                const normalized = {};
+                keys.forEach(k => normalized[normalizeHeader(k)] = k);
+
+                for (const alias of aliases) {
+                    const key = normalized[normalizeHeader(alias)];
+                    if (key !== undefined) return key;
+                }
+                return null;
+            }
+
+            function excelDateToISO(value) {
+                if (value === null || value === undefined || value === "") return "";
+
+                if (value instanceof Date && !isNaN(value.getTime())) {
+                    return value.toISOString().slice(0, 10);
+                }
+
+                if (typeof value === "number" && window.XLSX) {
+                    const date = XLSX.SSF.parse_date_code(value);
+                    if (date) {
+                        return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
+                    }
+                }
+
+                const text = String(value).trim();
+                if (!text) return "";
+
+                // yyyy-mm-dd
+                if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(text)) {
+                    const [y, m, d] = text.split("-");
+                    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                }
+
+                const date = new Date(text);
+                if (!isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+                return text;
+            }
+
+            function parseExcelRows(rows) {
+                const result = {};
+                const errors = [];
+
+                rows.forEach((row, index) => {
+                    const excelRow = index + 2;
+
+                    const poKey = findExcelColumn(row, ["PO", "PO Number", "Purchase Order", "PurchaseOrder"]);
+                    const vendorKey = findExcelColumn(row, ["Vendor", "Supplier"]);
+                    const ecrdKey = findExcelColumn(row, ["ECRD", "ECRD Date", "EcrdDate"]);
+                    const itemKey = findExcelColumn(row, ["Item", "SKU", "Item Code", "ItemCode"]);
+                    const qtyKey = findExcelColumn(row, ["Qty", "Quantity", "Qty PO", "QtyPO"]);
+                    const descKey = findExcelColumn(row, ["Description", "Desc", "Item Description"]);
+                    const imageKey = findExcelColumn(row, ["Image", "Image URL", "ImageURL", "Photo"]);
+
+                    const po = poKey ? String(row[poKey] ?? "").trim() : "";
+                    const vendor = vendorKey ? String(row[vendorKey] ?? "").trim() : "";
+                    const item = itemKey ? String(row[itemKey] ?? "").trim() : "";
+
+                    if (!po && !item && !vendor) return;
+
+                    if (!po || !vendor || !item) {
+                        errors.push(`Baris ${excelRow}: PO, Vendor, dan Item wajib diisi.`);
+                        return;
+                    }
+
+                    let qty = qtyKey ? Number(row[qtyKey]) : 0;
+                    if (isNaN(qty)) qty = 0;
+
+                    if (!result[po]) {
+                        result[po] = {
+                            Vendor: vendor,
+                            ecrd: excelDateToISO(ecrdKey ? row[ecrdKey] : ""),
+                            items: []
+                        };
+                    }
+
+                    // Jika PO yang sama muncul berkali-kali dengan ECRD/vendor kosong,
+                    // gunakan nilai yang sudah ada.
+                    if (!result[po].Vendor && vendor) result[po].Vendor = vendor;
+                    if (!result[po].ecrd && ecrdKey) result[po].ecrd = excelDateToISO(row[ecrdKey]);
+
+                    result[po].items.push({
+                        item: item,
+                        qty: qty,
+                        desc: descKey ? String(row[descKey] ?? "") : "",
+                        image: imageKey ? String(row[imageKey] ?? "").trim() : ""
+                    });
+                });
+
+                return { data: result, errors };
+            }
+
+            async function savePODataToFirebase(poData) {
+                if (!firebaseReady || !db) {
+                    throw new Error("Firebase belum siap. Isi firebaseConfig terlebih dahulu.");
+                }
+
+                const batch = db.batch();
+                const collectionRef = db.collection("purchaseOrders");
+
+                Object.entries(poData).forEach(([po, poValue]) => {
+                    const safeId = po.replace(/[\\/#?]/g, "_").trim();
+                    const docRef = collectionRef.doc(safeId);
+                    batch.set(docRef, {
+                        po: po,
+                        Vendor: poValue.Vendor || "",
+                        ecrd: poValue.ecrd || "",
+                        items: poValue.items || [],
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+
+                await batch.commit();
+            }
+
             async function loadPODataFromFirebase() {
                 if (!firebaseReady || !db) return {};
 
@@ -92,9 +229,48 @@ document.addEventListener("DOMContentLoaded", function () {
                     return firebaseData;
                 } catch (error) {
                     console.error("Gagal membaca Firebase:", error);
-
+                    setUploadStatus("Gagal membaca data Firebase", true);
                     return {};
                 }
+            }
+
+            async function uploadExcelToFirebase(file) {
+                if (!firebaseReady) {
+                    throw new Error("Firebase belum dikonfigurasi. Isi firebaseConfig terlebih dahulu.");
+                }
+
+                if (!file) return;
+
+                setUploadStatus("Membaca Excel...");
+
+                const buffer = await file.arrayBuffer();
+                const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+
+                if (!sheetName) throw new Error("Excel tidak memiliki worksheet.");
+
+                const worksheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                if (!rows.length) throw new Error("Excel tidak memiliki data.");
+
+                const parsed = parseExcelRows(rows);
+                const poCount = Object.keys(parsed.data).length;
+
+                if (!poCount) throw new Error("Tidak ada data PO yang valid ditemukan.");
+
+                setUploadStatus(`Menyimpan ${poCount} PO ke Firebase...`);
+                await savePODataToFirebase(parsed.data);
+
+                data = await loadPODataFromFirebase();
+                refreshPOSelectors();
+
+                const itemCount = Object.values(parsed.data).reduce((total, po) => total + po.items.length, 0);
+                let message = `Berhasil: ${poCount} PO / ${itemCount} item tersimpan.`;
+                if (parsed.errors.length) message += ` ${parsed.errors.length} baris dilewati.`;
+                setUploadStatus(message);
+
+                if (parsed.errors.length) console.warn("Baris Excel yang dilewati:", parsed.errors);
             }
 
             function refreshPOSelectors() {
@@ -110,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("dataTable").style.display = "none";
 
                 [...new Set(Object.values(data).map(d => d.Vendor).filter(Boolean))]
-                    .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}))
+                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
                     .forEach(v => {
                         const opt = document.createElement("option");
                         opt.value = v;
@@ -128,14 +304,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                setUploadStatus("Memuat data PO dari Firebase...");
                 data = await loadPODataFromFirebase();
                 refreshPOSelectors();
 
                 const count = Object.keys(data).length;
-
-            }
-            function backToGallery() {
-                window.location.href = "https://jeffanind.github.io/Gallery-Item-Product/";
+                setUploadStatus(count ? `${count} PO tersedia dari Firebase.` : "Belum ada data PO. Upload Excel.");
             }
 
             function backToApp1() {
@@ -225,6 +399,80 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         tbody.appendChild(tr);
                     });
+                });
+
+                // Hapus PO terpilih dari Firestore
+                const deletePOBtn = document.getElementById("deletePOBtn");
+                poSelect.addEventListener("change", function () {
+                    deletePOBtn.disabled = !this.value || !firebaseReady;
+                });
+
+                deletePOBtn.addEventListener("click", async function () {
+                    const po = poSelect.value;
+                    if (!po) {
+                        alert("Pilih nomor PO yang ingin dihapus terlebih dahulu.");
+                        return;
+                    }
+                    if (!firebaseReady || !db) {
+                        alert("Firebase belum siap.");
+                        return;
+                    }
+                    const yakin = confirm(`Hapus PO ${po} beserta seluruh itemnya dari Firebase?\n\nTindakan ini tidak dapat dibatalkan.`);
+                    if (!yakin) return;
+
+                    deletePOBtn.disabled = true;
+                    deletePOBtn.textContent = "⏳ Menghapus...";
+                    try {
+                        const safeId = po.replace(/[\\/#?]/g, "_").trim();
+                        await db.collection("purchaseOrders").doc(safeId).delete();
+                        const selectedVendor = vendorSelect.value;
+                        data = await loadPODataFromFirebase();
+                        refreshPOSelectors();
+                        vendorSelect.value = selectedVendor;
+                        vendorSelect.dispatchEvent(new Event("change"));
+                        setUploadStatus(`PO ${po} berhasil dihapus dari Firebase.`);
+                        alert(`PO ${po} berhasil dihapus.`);
+                    } catch (error) {
+                        console.error("Gagal menghapus PO:", error);
+                        setUploadStatus(error.message || "Gagal menghapus PO", true);
+                        alert("Gagal menghapus PO: " + (error.message || "Terjadi kesalahan."));
+                    } finally {
+                        deletePOBtn.textContent = "🗑️ Hapus PO Terpilih";
+                        deletePOBtn.disabled = !poSelect.value || !firebaseReady;
+                    }
+                });
+
+                // Upload Excel -> Firebase
+                const uploadBtn = document.getElementById("uploadExcelBtn");
+                const excelInput = document.getElementById("excelFileInput");
+
+                uploadBtn.addEventListener("click", function () {
+                    if (!firebaseReady) {
+                        alert("Firebase belum dikonfigurasi. Silakan isi firebaseConfig terlebih dahulu.");
+                        return;
+                    }
+                    excelInput.click();
+                });
+
+                excelInput.addEventListener("change", async function () {
+                    const file = this.files && this.files[0];
+                    if (!file) return;
+
+                    uploadBtn.disabled = true;
+                    uploadBtn.textContent = "⏳ Uploading...";
+
+                    try {
+                        await uploadExcelToFirebase(file);
+                        alert("Data PO berhasil di-upload ke Firebase.");
+                    } catch (error) {
+                        console.error(error);
+                        setUploadStatus(error.message || "Upload gagal", true);
+                        alert("Upload gagal: " + (error.message || "Terjadi kesalahan."));
+                    } finally {
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = "📤 Upload PO Excel";
+                        excelInput.value = "";
+                    }
                 });
 
                 initializePOData();
