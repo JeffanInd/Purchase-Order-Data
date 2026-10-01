@@ -6,139 +6,181 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Application Purchase Order</title>
         <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 
     <body>
         <div class="app-layout">
-            <!-- ===== SIDEBAR ===== -->
+            <!-- ================ SIDEBAR ================= -->
             <aside class="sidebar">
                 <img src="https://www.jeffan.com/secure/extensions/Intente/Jeffan_21_1_0/21.1.0/img/jeffan-logo.png"
                     class="sidebar-logo" alt="Logo Sidebar">
                 <h1>ERP Application System</h1>
                 <h2>Update.Ver.03.VI.2026</h2>
-
                 <div id="clock-container">
                     <div id="clock-time">00:00:00</div>
                     <div id="clock-date">-</div>
                 </div>
-
                 <div class="container">
-                    <h2>📦Purchase Order Data</h2>
+                    <h2>📦 Purchase Order Data</h2>
                     <select id="vendorSelect">
                         <option value="">-- Select Vendor --</option>
                     </select>
-
                     <select id="poSelect">
                         <option value="">-- Select PO --</option>
                     </select>
-                        <button id="prevPO">⬅ Previous PO</button>
-                        <button id="nextPO">Next PO ➡</button>
-                    </div>
-                    <button onclick="window.print()">Print / Save PDF</button>
-                    <button onclick="backToApp1()">🔙 Back to Dashboard</button>
+                    <div class="po-nav">
 
+                        <button id="prevPO">
+                            ⬅ Previous PO
+                        </button>
+
+                        <button id="nextPO">
+                            Next PO ➡
+                        </button>
+                    </div>
+                    <button onclick="window.print()">
+                        Print / Save PDF
+                    </button>
+                    <button onclick="backToGallery()">
+                        🔙 Back to Gallery Item
+                    </button>
+                    <button onclick="backToApp1()">
+                        🔙 Back to Dashboard
+                    </button>
                     <div class="toko-online" id="dashboardLinks">
-                        <h4>Visit Our Online Store</h4>
+                        <h4>
+                            Visit Our Online Store
+                        </h4>
                         <div class="link-toko">
-                            <a href="https://www.jeffan.com/" target="_blank">🌐 Jeffan Store</a>
-                            <a href="https://www.wayfair.com" target="_blank">🌐 Wayfair</a>
-                            <a href="https://s.id/atrisna" target="_blank">https://myadmin.co.id</a>
+
+                            <a href="https://www.jeffan.com/" target="_blank">
+                                🌐 Jeffan Store
+                            </a>
+                            <a href="https://www.wayfair.com" target="_blank">
+                                🌐 Wayfair
+                            </a>
+                            <a href="https://s.id/atrisna" target="_blank">
+                                https://myadmin.co.id
+                            </a>
                         </div>
                     </div>
                 </div>
             </aside>
-
-            <!-- ===== MAIN CONTENT ===== -->
+            <!-- ================= MAIN CONTENT ================= -->
             <div class="main-content">
-                <!-- HEADER PO -->
+                <!-- HEADER PURCHASE ORDER -->
                 <div id="poHeader" class="print-header">
-                    <div class="company-title" style="text-align:right;">
-                        <h1>PURCHASE ORDER</h1>
+                    <div class="company-title">
+                        <h1>
+                            PURCHASE ORDER
+                        </h1>
                     </div>
-
                     <div class="company-section-left">
                         <div class="logo-area">
                             <img src="https://www.jeffan.com/sca-dev-2024-2-0/extensions/Intente/Jeffan_21_1_0/21.1.0/img/jeffan-logo.png"
                                 alt="Logo Perusahaan" class="company-logo">
-                            <p>BRING STYLE HOME</p>
+                            <p>
+                                BRING STYLE HOME
+                            </p>
                         </div>
-                        <div class="company-info"></div>
-                        <p><strong>Jeffan International</strong></p>
+                        <p>
+                            <strong>
+                                Jeffan International
+                            </strong>
+                        </p>
                         <div class="company-addresses">
                             <div class="office">
                                 <p><strong>Office :</strong></p>
-                                <p class="address">1307 E. Main St, ste 1</p>
-                                <p class="address">Chattanooga, TN 37404</p>
-                                <p class="address">Ph: 423.622.0180</p>
-                                <p class="address">Fax: 423.622.0182</p>
+                                <p>
+                                    1307 E. Main St, ste 1
+                                </p>
+                                <p>
+                                    Chattanooga, TN 37404
+                                </p>
+                                <p>
+                                    Ph: 423.622.0180
+                                </p>
+                                <p>
+                                    Fax: 423.622.0182
+                                </p>
                             </div>
                             <div class="warehouse">
-                                <p><strong>Warehouse :</strong></p>
-                                <p>420 Workman Rd</p>
-                                <p>Chattanooga, TN 37410</p>
+                                <p>
+                                    <strong>
+                                        Warehouse :
+                                    </strong>
+                                </p>
+                                <p>
+                                    420 Workman Rd
+                                </p>
+                                <p>
+                                    Chattanooga, TN 37410
+                                </p>
                             </div>
                         </div>
                     </div>
-
                     <hr>
-
                     <div class="po-info">
                         <div class="left-info">
-                            <p><strong>Vendor :</strong> <span id="headerVendor"></span></p>
-                            <p><strong>PO :</strong> <span id="headerPO"></span></p>
-                            <p><strong>ECRD :</strong> <span id="headerECRD"></span></p>
+                            <p>
+                                <strong>
+                                    Vendor :
+                                </strong>
+
+                                <span id="headerVendor"></span>
+                            </p>
+                            <p>
+                                <strong>
+                                    PO :
+                                </strong>
+                                <span id="headerPO"></span>
+                            </p>
+                            <p>
+                                <strong>
+                                    ECRD :
+                                </strong>
+                                <span id="headerECRD"></span>
+                            </p>
                         </div>
                         <div class="right-info">
-                            <p><strong>Print Date :</strong> <span id="printDate"></span></p>
+                            <p>
+                                <strong>
+                                    Print Date :
+                                </strong>
+                                <span id="printDate"></span>
+                            </p>
                         </div>
                     </div>
-
                     <hr>
+                    <!-- ================= TABLE DATA ================= -->
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty PO</th>
+                                <th>Qty AQL</th>
+                                <th>Description</th>
+                                <th>Image</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
                 </div>
-
-                <!-- TABLE DATA -->
-                <table id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Qty PO</th>
-                            <th>Qty AQL</th>
-                            <th>Description</th>
-                            <th>Image</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <!-- END MAIN CONTENT -->
             </div>
-        </div>
-        <!-- Modal untuk zoom gambar -->
-        <div id="imgModal" style="
-        display:none; 
-        position:fixed; 
-        z-index:1000; 
-        left:0; 
-        top:0; 
-        width:100%; 
-        height:100%; 
-        background-color: rgba(0,0,0,0.8); 
-        text-align:center;">
-            <img id="modalImg" style="
-            max-width:90%; 
-            max-height:90%; 
-            margin-top:5%; cursor:pointer;">
-        </div>
-        <!-- Tambahkan ini di bagian <head> -->
-        <!-- Excel + Firebase -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-        <script src="script.js"></script>
+            <!-- END APP LAYOUT -->
+            <!-- ================= IMAGE MODAL ================= -->
+            <div id="imgModal">
+                <img id="modalImg">
+            </div>
+            <!-- ================ EXTERNAL LIBRARY ================= -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+            <script
+                src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+            <!-- MAIN SCRIPT -->
+            <script src="script.js"></script>
     </body>
 
 </html>
