@@ -311,10 +311,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 const count = Object.keys(data).length;
                 setUploadStatus(count ? `${count} PO tersedia dari Firebase.` : "Belum ada data PO. Upload Excel.");
             }
+            function backToGallery() {
+                window.location.href = "https://jeffanind.github.io/Gallery-Item-Product";
+            }
 
             function backToApp1() {
                 window.location.href = "https://jeffanind.github.io/Appl-System-Dashboard/";
             }
+
 
             function hitungAQL(qty) {
                 if (qty <= 8) return 2;
